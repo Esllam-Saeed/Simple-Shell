@@ -1,10 +1,11 @@
-#include "shell.h"
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size);
 void assign_lineptr(char **lineptr, size_t *n, char *buffer, size_t b);
 ssize_t _getline(char **lineptr, size_t *n, FILE *stream);
-
 
 /**
  * _realloc - Reallocates a memory block using malloc and free.
@@ -93,7 +94,7 @@ void assign_lineptr(char **lineptr, size_t *n, char *buffer, size_t b)
     }
     else
     {
-        _strcpy(*lineptr, buffer);
+        strcpy(*lineptr, buffer);
         free(buffer);
     }
 }
@@ -119,68 +120,4 @@ ssize_t _getline(char **lineptr, size_t *n, FILE *stream)
         fflush(stream);
     else
         return (-1);
-    input = 0;
-
-
-    buffer = malloc(sizeof(char) * 120);
-    if (!buffer)
-        return (-1);
-
-
-    while (c != '\n')
-    {
-        r = read(STDIN_FILENO, &c, 1);
-        if (r == -1 || (r == 0 && input == 0))
-        {
-            free(buffer);
-            return (-1);
-        }
-        if (r == 0 && input != 0)
-        {
-            input++;
-            break;
-        }
-
-
-        if (input >= 120)
-            buffer = _realloc(buffer, input, input + 1);
-
-
-        buffer[input] = c;
-        input++;
-    }
-    buffer[input] = '\0';
-
-
-    assign_lineptr(lineptr, n, buffer, input);
-
-
-    ret = input;
-    if (r != 0)
-        input = 0;
-    return (ret);
-}
-
-/**
- * _strcpy - Copies the string pointed to by src, including the terminating null byte,
- *           to the buffer pointed to by dest.
- * @dest: The buffer to copy the string to.
- * @src: The string to copy.
- *
- * Return: A pointer to dest.
- */
-char *_strcpy(char *dest, char *src)
-{
-    char *temp = dest;
-
-    while (*src)
-    {
-        *dest = *src;
-        dest++;
-        src++;
-    }
-
-    *dest = '\0';
-
-    return (temp);
-}
+    input = 0
