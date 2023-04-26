@@ -1,60 +1,186 @@
-#include "main.h"
+#include "shell.h"
+
+
+void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size);
+void assign_lineptr(char **lineptr, size_t *n, char *buffer, size_t b);
+ssize_t _getline(char **lineptr, size_t *n, FILE *stream);
+
 
 /**
- * _getline - read the input from a stream, always STDIN
- * @lineptr: buffer where the input is stored
- * @sz: size of input buffer
- * @thread: the input file handler/stream
- * Return: number of chars read, -1 if it fails
+ * _realloc - Reallocates a memory block using malloc and free.
+ * @ptr: A pointer to the memory previously allocated.
+ * @old_size: The size in bytes of the allocated space for ptr.
+ * @new_size: The size in bytes for the new memory block.
+ *
+ * Return: If new_size == old_size - ptr.
+ *         If new_size == 0 and ptr is not NULL - NULL.
+ *         Otherwise - a pointer to the reallocated memory block.
  */
-
-ssize_t _getline(char **lineptr, size_t *sz, FILE *thread)
+void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size)
 {
-	static ssize_t input;
-	char c = 'x';
-	char *buf;
-	int readBool;
-	ssize_t res;
+    void *mem;
+    char *ptr_copy, *filler;
+    unsigned int index;
 
-	if (input != 0)
-		return (-1);
 
-	fflush(thread);
-	input = 0;
+    if (new_size == old_size)
+        return (ptr);
 
-	buf = malloc(sizeof(char) * 120);
-	if (!buf)
-		return (-1);
 
-	while (c != '\n')
-	{
-		readBool = read(STDIN_FILENO, &c, 1);
+    if (ptr == NULL)
+    {
+        mem = malloc(new_size);
+        if (mem == NULL)
+            return (NULL);
 
-		if (readBool == -1 || (readBool == 0 && input == 0))
-		{
-			free(buf);
-			return (-1);
-		}
 
-		if (readBool == 0 && input != 0)
-		{
-			input++;
-			break;
-		}
+        return (mem);
+    }
 
-		if (input >= 120)
-			buf = _realloc(buf, 120, input + 1);
 
-		buf[input] = c;
-		input++;
-	}
+    if (new_size == 0 && ptr != NULL)
+    {
+        free(ptr);
+        return (NULL);
+    }
 
-	buf[input] = '\0';
-	reassign_pr(lineptr, sz, buf, input);
-	res = input;
 
-	if (readBool != 0)
-		input = 0;
+    ptr_copy = ptr;
+    mem = malloc(sizeof(*ptr_copy) * new_size);
+    if (mem == NULL)
+    {
+        free(ptr);
+        return (NULL);
+    }
 
-	return (res);
+
+    filler = mem;
+
+
+    for (index = 0; index < old_size && index < new_size; index++)
+        filler[index] = *ptr_copy++;
+
+
+    free(ptr);
+    return (mem);
+}
+
+
+/**
+ * assign_lineptr - Reassigns the lineptr variable for _getline.
+ * @lineptr: A buffer to store an input string.
+ * @n: The size of lineptr.
+ * @buffer: The string to assign to lineptr.
+ * @b: The size of buffer.
+ */
+void assign_lineptr(char **lineptr, size_t *n, char *buffer, size_t b)
+{
+    if (*lineptr == NULL)
+    {
+        if (b > 120)
+            *n = b;
+        else
+            *n = 120;
+        *lineptr = buffer;
+    }
+    else if (*n < b)
+    {
+        if (b > 120)
+            *n = b;
+        else
+            *n = 120;
+        *lineptr = buffer;
+    }
+    else
+    {
+        _strcpy(*lineptr, buffer);
+        free(buffer);
+    }
+}
+
+
+/**
+ * _getline - Reads input from a stream.
+ * @lineptr: A buffer to store the input.
+ * @n: The size of lineptr.
+ * @stream: The stream to read from.
+ *
+ * Return: The number of bytes read.
+ */
+ssize_t _getline(char **lineptr, size_t *n, FILE *stream)
+{
+    static ssize_t input;
+    ssize_t ret;
+    char c = 'x', *buffer;
+    int r;
+
+
+    if (input == 0)
+        fflush(stream);
+    else
+        return (-1);
+    input = 0;
+
+
+    buffer = malloc(sizeof(char) * 120);
+    if (!buffer)
+        return (-1);
+
+
+    while (c != '\n')
+    {
+        r = read(STDIN_FILENO, &c, 1);
+        if (r == -1 || (r == 0 && input == 0))
+        {
+            free(buffer);
+            return (-1);
+        }
+        if (r == 0 && input != 0)
+        {
+            input++;
+            break;
+        }
+
+
+        if (input >= 120)
+            buffer = _realloc(buffer, input, input + 1);
+
+
+        buffer[input] = c;
+        input++;
+    }
+    buffer[input] = '\0';
+
+
+    assign_lineptr(lineptr, n, buffer, input);
+
+
+    ret = input;
+    if (r != 0)
+        input = 0;
+    return (ret);
+}
+
+/**
+ * _strcpy - Copies the string pointed to by src, including the terminating null byte,
+ *           to the buffer pointed to by dest.
+ * @dest: The buffer to copy the string to.
+ * @src: The string to copy.
+ *
+ * Return: A pointer to dest.
+ */
+char *_strcpy(char *dest, char *src)
+{
+    char *temp = dest;
+
+    while (*src)
+    {
+        *dest = *src;
+        dest++;
+        src++;
+    }
+
+    *dest = '\0';
+
+    return (temp);
 }
